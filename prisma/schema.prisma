@@ -1,0 +1,481 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model RefreshToken {
+  id        BigInt   @id @default(autoincrement())
+  token     String   @unique @db.VarChar(512)
+  userId    BigInt   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model User {
+  id           BigInt     @id @default(autoincrement()) @map("user_id")
+  username     String     @unique @db.VarChar(50)
+  password     String     @db.VarChar(255)
+  email        String     @unique @db.VarChar(100)
+  name         String     @db.VarChar(50)
+  birthDate    DateTime?  @map("birth_date") @db.Date
+  phone        String?    @db.VarChar(20)
+  profileImage String?    @map("profile_image") @db.VarChar(255)
+  region       String?    @db.VarChar(100)
+  latitude     Decimal?   @db.Decimal(10, 8)
+  longitude    Decimal?   @db.Decimal(11, 8)
+  isPetOwner   Boolean    @default(false) @map("is_pet_owner")
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  lastLoginAt  DateTime?  @map("last_login_at")
+
+  // Relations
+  pets                Pet[]
+  posts               Post[]
+  comments            Comment[]
+  likes               Like[]
+  notifications       Notification[]
+  follows             Follow[]             @relation("UserFollows")
+  followers           Follow[]             @relation("UserFollowers")
+  userActivityStats   UserActivityStats?
+  userAgreements      UserAgreement[]
+  walkingMates        WalkingMate[]
+  walkingParticipants WalkingParticipant[]
+  walkingRecords      WalkingRecord[]
+  walkingRoutes       WalkingRoute[]
+  systemLogs          SystemLog[]
+  refreshTokens       RefreshToken[]
+
+  @@map("users")
+}
+
+model Pet {
+  id                 BigInt     @id @default(autoincrement()) @map("pet_id")
+  userId             BigInt     @map("user_id")
+  petName            String     @map("pet_name") @db.VarChar(50)
+  species            PetSpecies
+  breed              String?    @db.VarChar(50)
+  age                Int?
+  birthDate          DateTime?  @map("birth_date") @db.Date
+  gender             PetGender?
+  isNeutered         Boolean    @default(false) @map("is_neutered")
+  size               PetSize?
+  weight             Decimal?   @db.Decimal(5, 2)
+  personality        String?    @db.Text
+  healthStatus       String?    @map("health_status") @db.Text
+  specialNotes       String?    @map("special_notes") @db.Text
+  profileImage       String?    @map("profile_image") @db.VarChar(255)
+  registrationNumber String?    @map("registration_number") @db.VarChar(50)
+  microchipNumber    String?    @map("microchip_number") @db.VarChar(50)
+  isVerified         Boolean    @default(false) @map("is_verified")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts               Post[]
+  petFriendships1     PetFriendship[]      @relation("Pet1")
+  petFriendships2     PetFriendship[]      @relation("Pet2")
+  walkingParticipants WalkingParticipant[]
+  walkingRecords      WalkingRecord[]
+
+  @@map("pets")
+}
+
+model Post {
+  id           BigInt         @id @default(autoincrement()) @map("post_id")
+  userId       BigInt         @map("user_id")
+  petId        BigInt?        @map("pet_id")
+  content      String         @db.Text
+  region       String?        @db.VarChar(100)
+  latitude     Decimal?       @db.Decimal(10, 8)
+  longitude    Decimal?       @db.Decimal(11, 8)
+  visibility   PostVisibility @default(PUBLIC)
+  viewCount    Int            @default(0) @map("view_count")
+  likeCount    Int            @default(0) @map("like_count")
+  commentCount Int            @default(0) @map("comment_count")
+  status       PostStatus     @default(ACTIVE)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet          Pet?          @relation(fields: [petId], references: [id], onDelete: SetNull)
+  comments     Comment[]
+  likes        Like[]
+  postHashtags PostHashtag[]
+  postImages   PostImage[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id              BigInt        @id @default(autoincrement()) @map("comment_id")
+  postId          BigInt        @map("post_id")
+  userId          BigInt        @map("user_id")
+  parentCommentId BigInt?       @map("parent_comment_id")
+  content         String        @db.VarChar(500)
+  status          CommentStatus @default(ACTIVE)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentComment Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies       Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model Like {
+  id        BigInt   @id @default(autoincrement()) @map("like_id")
+  postId    BigInt   @map("post_id")
+  userId    BigInt   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model Follow {
+  id          BigInt   @id @default(autoincrement()) @map("follow_id")
+  followerId  BigInt   @map("follower_id")
+  followingId BigInt   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  follower  User @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Notification {
+  id               BigInt           @id @default(autoincrement()) @map("notification_id")
+  userId           BigInt           @map("user_id")
+  notificationType NotificationType
+  relatedId        BigInt?          @map("related_id")
+  title            String           @db.VarChar(100)
+  content          String?          @db.Text
+  linkUrl          String?          @map("link_url") @db.VarChar(255)
+  isRead           Boolean          @default(false) @map("is_read")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Hashtag {
+  id         BigInt   @id @default(autoincrement()) @map("hashtag_id")
+  tagName    String   @unique @map("tag_name") @db.VarChar(50)
+  usageCount Int      @default(0) @map("usage_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  postHashtags PostHashtag[]
+
+  @@map("hashtags")
+}
+
+model PostHashtag {
+  postId    BigInt   @map("post_id")
+  hashtagId BigInt   @map("hashtag_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, hashtagId])
+  @@map("post_hashtags")
+}
+
+model PostImage {
+  id         BigInt   @id @default(autoincrement()) @map("image_id")
+  postId     BigInt   @map("post_id")
+  imageUrl   String   @map("image_url") @db.VarChar(255)
+  imageOrder Int      @default(0) @map("image_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("post_images")
+}
+
+model WalkingMate {
+  id                  BigInt            @id @default(autoincrement()) @map("mate_id")
+  hostUserId          BigInt            @map("host_user_id")
+  walkingDate         DateTime          @map("walking_date")
+  location            String            @db.VarChar(255)
+  latitude            Decimal?          @db.Decimal(10, 8)
+  longitude           Decimal?          @db.Decimal(11, 8)
+  duration            Int?
+  maxParticipants     Int               @default(5) @map("max_participants")
+  currentParticipants Int               @default(1) @map("current_participants")
+  petSizeFilter       PetSizeFilter     @default(ALL) @map("pet_size_filter")
+  description         String?           @db.Text
+  status              WalkingMateStatus @default(OPEN)
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  hostUser     User                 @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
+  participants WalkingParticipant[]
+
+  @@map("walking_mates")
+}
+
+model WalkingParticipant {
+  id       BigInt                   @id @default(autoincrement()) @map("participant_id")
+  mateId   BigInt                   @map("mate_id")
+  userId   BigInt                   @map("user_id")
+  petId    BigInt?                  @map("pet_id")
+  status   WalkingParticipantStatus @default(PENDING)
+  joinedAt DateTime                 @default(now()) @map("joined_at")
+
+  // Relations
+  mate WalkingMate @relation(fields: [mateId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet  Pet?        @relation(fields: [petId], references: [id], onDelete: SetNull)
+
+  @@map("walking_participants")
+}
+
+model WalkingRoute {
+  id          BigInt           @id @default(autoincrement()) @map("route_id")
+  routeName   String           @map("route_name") @db.VarChar(100)
+  region      String?          @db.VarChar(100)
+  distance    Decimal?         @db.Decimal(5, 2)
+  duration    Int?
+  difficulty  RouteDifficulty?
+  pathData    String?          @map("path_data") @db.Text
+  description String?          @db.Text
+  rating      Decimal          @default(0.00) @db.Decimal(3, 2)
+  reviewCount Int              @default(0) @map("review_count")
+  createdBy   BigInt?          @map("created_by")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  creator        User?           @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  walkingRecords WalkingRecord[]
+
+  @@map("walking_routes")
+}
+
+model WalkingRecord {
+  id          BigInt   @id @default(autoincrement()) @map("record_id")
+  userId      BigInt   @map("user_id")
+  petId       BigInt?  @map("pet_id")
+  routeId     BigInt?  @map("route_id")
+  walkingDate DateTime @map("walking_date")
+  distance    Decimal? @db.Decimal(5, 2)
+  duration    Int?
+  pathData    String?  @map("path_data") @db.Text
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet   Pet?          @relation(fields: [petId], references: [id], onDelete: SetNull)
+  route WalkingRoute? @relation(fields: [routeId], references: [id], onDelete: SetNull)
+
+  @@map("walking_records")
+}
+
+model PetFriendship {
+  id          BigInt              @id @default(autoincrement()) @map("friendship_id")
+  petId1      BigInt              @map("pet_id_1")
+  petId2      BigInt              @map("pet_id_2")
+  status      PetFriendshipStatus @default(PENDING)
+  requestedAt DateTime            @default(now()) @map("requested_at")
+  acceptedAt  DateTime?           @map("accepted_at")
+
+  // Relations
+  pet1 Pet @relation("Pet1", fields: [petId1], references: [id], onDelete: Cascade)
+  pet2 Pet @relation("Pet2", fields: [petId2], references: [id], onDelete: Cascade)
+
+  @@map("pet_friendships")
+}
+
+model UserActivityStats {
+  id                BigInt   @id @default(autoincrement()) @map("stat_id")
+  userId            BigInt   @unique @map("user_id")
+  postCount         Int      @default(0) @map("post_count")
+  commentCount      Int      @default(0) @map("comment_count")
+  receivedLikeCount Int      @default(0) @map("received_like_count")
+  followerCount     Int      @default(0) @map("follower_count")
+  followingCount    Int      @default(0) @map("following_count")
+  walkingCount      Int      @default(0) @map("walking_count")
+  totalDistance     Decimal  @default(0.00) @map("total_distance") @db.Decimal(10, 2)
+  eventParticipated Int      @default(0) @map("event_participated")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activity_stats")
+}
+
+model UserAgreement {
+  id            BigInt        @id @default(autoincrement()) @map("agreement_id")
+  userId        BigInt        @map("user_id")
+  agreementType AgreementType
+  version       String        @db.VarChar(20)
+  isAgreed      Boolean       @default(false) @map("is_agreed")
+  agreedAt      DateTime      @default(now()) @map("agreed_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_agreements")
+}
+
+model DailyStatistics {
+  id                BigInt   @id @default(autoincrement()) @map("stat_id")
+  statDate          DateTime @map("stat_date") @db.Date
+  newUsers          Int      @default(0) @map("new_users")
+  activeUsers       Int      @default(0) @map("active_users")
+  newPosts          Int      @default(0) @map("new_posts")
+  newComments       Int      @default(0) @map("new_comments")
+  newMissingReports Int      @default(0) @map("new_missing_reports")
+  resolvedMissing   Int      @default(0) @map("resolved_missing")
+  newEvents         Int      @default(0) @map("new_events")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([statDate])
+  @@map("daily_statistics")
+}
+
+model SystemLog {
+  id         BigInt   @id @default(autoincrement()) @map("log_id")
+  userId     BigInt?  @map("user_id")
+  actionType String   @map("action_type") @db.VarChar(50)
+  targetType String?  @map("target_type") @db.VarChar(50)
+  targetId   BigInt?  @map("target_id")
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.Text
+  details    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("system_logs")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PetSpecies {
+  DOG
+  CAT
+  OTHER
+}
+
+enum PetGender {
+  MALE
+  FEMALE
+}
+
+enum PetSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum PostVisibility {
+  PUBLIC
+  FOLLOWERS
+  PRIVATE
+}
+
+enum PostStatus {
+  ACTIVE
+  DELETED
+  REPORTED
+}
+
+enum CommentStatus {
+  ACTIVE
+  DELETED
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  MISSING
+  EMERGENCY
+  EVENT
+  APPOINTMENT
+  SYSTEM
+}
+
+enum PetSizeFilter {
+  ALL
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum WalkingMateStatus {
+  OPEN
+  FULL
+  COMPLETED
+  CANCELLED
+}
+
+enum WalkingParticipantStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum RouteDifficulty {
+  EASY
+  MODERATE
+  HARD
+}
+
+enum PetFriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum AgreementType {
+  TERMS
+  PRIVACY
+  LOCATION
+  MARKETING
+}
