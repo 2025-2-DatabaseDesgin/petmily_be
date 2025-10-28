@@ -1,8 +1,5 @@
 ### ⛓️‍💥 Issue Number
-- #(issue 번호)
-
-  ex) #17 FEAT: pull request template 작성
-  (확인 후 지워주세요)
+- closed #(issue 번호)
 
   <br/>
 ### 🔎 Summary
