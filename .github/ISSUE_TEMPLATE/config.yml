@@ -1,0 +1,15 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 📌 petmily 백엔드 이슈 가이드
+    url: https://github.com/2025-2-DatabaseDesgin/petmily_be/issues
+    about: 일반적인 문의나 버그 리포트 전에 이슈 가이드를 확인해주세요.
+
+issue_templates:
+  - name: 🐞 버그 리포트
+    description: 버그를 신고하고 수정 요청을 작성하세요.
+    file: bug_report.md
+
+  - name: ✨ 기능 요청
+    description: 새로운 기능을 제안하세요.
+    file: feature_request.md
