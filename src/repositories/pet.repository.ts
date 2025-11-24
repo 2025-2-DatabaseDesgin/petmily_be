@@ -1,6 +1,20 @@
-import { PrismaClient, Pet, PetSpecies, PetGender, PetSize } from '@prisma/client';
+import { PrismaClient, Pet, PetSpecies, PetGender, PetSize, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Pet with user relation type
+type PetWithUser = Prisma.PetGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        username: true;
+        name: true;
+        profileImage: true;
+      };
+    };
+  };
+}>;
 
 // 반려동물 생성
 export const createPet = async (data: {
@@ -54,7 +68,7 @@ export const findPetsByUserId = async (userId: bigint): Promise<Pet[]> => {
 };
 
 // 반려동물 상세 조회
-export const findPetById = async (id: bigint): Promise<Pet | null> => {
+export const findPetById = async (id: bigint): Promise<PetWithUser | null> => {
   return prisma.pet.findUnique({
     where: { id },
     include: {

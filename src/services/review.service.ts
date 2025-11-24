@@ -62,16 +62,16 @@ export const createReviewService = async (
         distance: data.distance,
         duration: data.duration,
         notes: data.notes,
-        photoUrls: data.photoUrls ? JSON.stringify(data.photoUrls) : null,
+        photoUrls: data.photoUrls ? JSON.stringify(data.photoUrls) : undefined,
         isPublic: data.isPublic ?? true,
       },
     });
 
     // 산책로 평점 업데이트
-    if (session.mate.routeId && data.routeRating) {
-      const { averageRating, reviewCount } = await calculateRouteAverageRating(session.mate.routeId);
+    if (session.mate.route?.id && data.routeRating) {
+      const { averageRating, reviewCount } = await calculateRouteAverageRating(session.mate.route.id);
       await tx.walkingRoute.update({
-        where: { id: session.mate.routeId },
+        where: { id: session.mate.route.id },
         data: {
           rating: averageRating,
           reviewCount,
@@ -149,10 +149,10 @@ export const updateReviewService = async (
     });
 
     // 산책로 평점 재계산
-    if (review.session.mate.routeId && data.routeRating) {
-      const { averageRating, reviewCount } = await calculateRouteAverageRating(review.session.mate.routeId);
+    if (review.session.mate.route?.id && data.routeRating) {
+      const { averageRating, reviewCount } = await calculateRouteAverageRating(review.session.mate.route.id);
       await tx.walkingRoute.update({
-        where: { id: review.session.mate.routeId },
+        where: { id: review.session.mate.route.id },
         data: {
           rating: averageRating,
           reviewCount,
@@ -182,10 +182,10 @@ export const deleteReviewService = async (reviewId: bigint, userId: bigint) => {
     });
 
     // 산책로 평점 재계산
-    if (review.session.mate.routeId) {
-      const { averageRating, reviewCount } = await calculateRouteAverageRating(review.session.mate.routeId);
+    if (review.session.mate.route?.id) {
+      const { averageRating, reviewCount } = await calculateRouteAverageRating(review.session.mate.route.id);
       await tx.walkingRoute.update({
-        where: { id: review.session.mate.routeId },
+        where: { id: review.session.mate.route.id },
         data: {
           rating: averageRating,
           reviewCount,

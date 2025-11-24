@@ -1,4 +1,4 @@
-import { PrismaClient, WalkingMateStatus, PetSizeFilter } from '@prisma/client';
+import { PrismaClient, WalkingMateStatus, PetSizeFilter, WalkingWaitlist, WalkingParticipant } from '@prisma/client';
 import {
   createWalkingMate,
   findWalkingMates,
@@ -28,6 +28,11 @@ import {
 import { isPetOwner } from '../repositories/pet.repository';
 
 const prisma = new PrismaClient();
+
+// Join result type
+export type JoinWalkingMateResult =
+  | { type: 'waitlist'; waitlist: WalkingWaitlist; participant?: never }
+  | { type: 'participant'; participant: WalkingParticipant; waitlist?: never };
 
 // 산책 메이트 모집 생성
 export const createWalkingMateService = async (
@@ -124,7 +129,7 @@ export const joinWalkingMateService = async (
   mateId: bigint,
   userId: bigint,
   petIds: bigint[]
-) => {
+): Promise<JoinWalkingMateResult> => {
   return await prisma.$transaction(async (tx) => {
     // 모집 정보 조회
     const mate = await tx.walkingMate.findUnique({

@@ -276,7 +276,7 @@ export const joinWalkingMateController = async (req: Request, res: Response, nex
         waitlistId: result.waitlist.id.toString(),
         priority: result.waitlist.priority,
       });
-    } else {
+    } else if (result.type === 'participant') {
       res.sendSuccess(StatusCodes.CREATED, '참가 신청이 완료되었습니다.', {
         type: 'participant',
         participantId: result.participant.id.toString(),
