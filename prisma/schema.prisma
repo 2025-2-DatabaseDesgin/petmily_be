@@ -38,16 +38,9 @@ model User {
 
   // Relations
   pets                Pet[]
-  posts               Post[]
-  comments            Comment[]
-  likes               Like[]
-  notifications       Notification[]
   follows             Follow[]             @relation("UserFollows")
   followers           Follow[]             @relation("UserFollowers")
-  userActivityStats   UserActivityStats?
-  userAgreements      UserAgreement[]
   refreshTokens       RefreshToken[]
-  systemLogs          SystemLog[]
   // 산책 관련
   walkingRoutes       WalkingRoute[]
   walkingMatesHosted  WalkingMate[]
@@ -103,7 +96,6 @@ model Pet {
 
   // Relations
   user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  posts                  Post[]
   petFriendships1        PetFriendship[]         @relation("Pet1")
   petFriendships2        PetFriendship[]         @relation("Pet2")
   walkingParticipantPets WalkingParticipantPet[]
@@ -417,196 +409,7 @@ model WalkingReview {
 }
 
 // ============================================
-// 13. 소셜 기능 (게시글, 댓글, 좋아요 등)
-// ============================================
-
-model Post {
-  id           BigInt         @id @default(autoincrement()) @map("post_id")
-  userId       BigInt         @map("user_id")
-  petId        BigInt?        @map("pet_id")
-  content      String         @db.Text
-  region       String?        @db.VarChar(100)
-  latitude     Decimal?       @db.Decimal(10, 8)
-  longitude    Decimal?       @db.Decimal(11, 8)
-  visibility   PostVisibility @default(PUBLIC)
-  viewCount    Int            @default(0) @map("view_count")
-  likeCount    Int            @default(0) @map("like_count")
-  commentCount Int            @default(0) @map("comment_count")
-  status       PostStatus     @default(ACTIVE)
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
-
-  // Relations
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pet          Pet?          @relation(fields: [petId], references: [id], onDelete: SetNull)
-  comments     Comment[]
-  likes        Like[]
-  postHashtags PostHashtag[]
-  postImages   PostImage[]
-
-  @@map("posts")
-}
-
-model Comment {
-  id              BigInt        @id @default(autoincrement()) @map("comment_id")
-  postId          BigInt        @map("post_id")
-  userId          BigInt        @map("user_id")
-  parentCommentId BigInt?       @map("parent_comment_id")
-  content         String        @db.VarChar(500)
-  status          CommentStatus @default(ACTIVE)
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-
-  // Relations
-  post          Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parentComment Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
-  replies       Comment[] @relation("CommentReplies")
-
-  @@map("comments")
-}
-
-model Like {
-  id        BigInt   @id @default(autoincrement()) @map("like_id")
-  postId    BigInt   @map("post_id")
-  userId    BigInt   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([postId, userId])
-  @@map("likes")
-}
-
-model Notification {
-  id               BigInt           @id @default(autoincrement()) @map("notification_id")
-  userId           BigInt           @map("user_id")
-  notificationType NotificationType
-  relatedId        BigInt?          @map("related_id")
-  title            String           @db.VarChar(100)
-  content          String?          @db.Text
-  linkUrl          String?          @map("link_url") @db.VarChar(255)
-  isRead           Boolean          @default(false) @map("is_read")
-  createdAt        DateTime         @default(now()) @map("created_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-model Hashtag {
-  id         BigInt   @id @default(autoincrement()) @map("hashtag_id")
-  tagName    String   @unique @map("tag_name") @db.VarChar(50)
-  usageCount Int      @default(0) @map("usage_count")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
-  postHashtags PostHashtag[]
-
-  @@map("hashtags")
-}
-
-model PostHashtag {
-  postId    BigInt   @map("post_id")
-  hashtagId BigInt   @map("hashtag_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
-
-  @@id([postId, hashtagId])
-  @@map("post_hashtags")
-}
-
-model PostImage {
-  id         BigInt   @id @default(autoincrement()) @map("image_id")
-  postId     BigInt   @map("post_id")
-  imageUrl   String   @map("image_url") @db.VarChar(255)
-  imageOrder Int      @default(0) @map("image_order")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@map("post_images")
-}
-
-// ============================================
-// 14. 통계 및 활동
-// ============================================
-
-model UserActivityStats {
-  id                BigInt   @id @default(autoincrement()) @map("stat_id")
-  userId            BigInt   @unique @map("user_id")
-  postCount         Int      @default(0) @map("post_count")
-  commentCount      Int      @default(0) @map("comment_count")
-  receivedLikeCount Int      @default(0) @map("received_like_count")
-  followerCount     Int      @default(0) @map("follower_count")
-  followingCount    Int      @default(0) @map("following_count")
-  walkingCount      Int      @default(0) @map("walking_count")
-  totalDistance     Decimal  @default(0.00) @map("total_distance") @db.Decimal(10, 2)
-  eventParticipated Int      @default(0) @map("event_participated")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_activity_stats")
-}
-
-model UserAgreement {
-  id            BigInt        @id @default(autoincrement()) @map("agreement_id")
-  userId        BigInt        @map("user_id")
-  agreementType AgreementType
-  version       String        @db.VarChar(20)
-  isAgreed      Boolean       @default(false) @map("is_agreed")
-  agreedAt      DateTime      @default(now()) @map("agreed_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_agreements")
-}
-
-model DailyStatistics {
-  id                BigInt   @id @default(autoincrement()) @map("stat_id")
-  statDate          DateTime @map("stat_date") @db.Date
-  newUsers          Int      @default(0) @map("new_users")
-  activeUsers       Int      @default(0) @map("active_users")
-  newPosts          Int      @default(0) @map("new_posts")
-  newComments       Int      @default(0) @map("new_comments")
-  newMissingReports Int      @default(0) @map("new_missing_reports")
-  resolvedMissing   Int      @default(0) @map("resolved_missing")
-  newEvents         Int      @default(0) @map("new_events")
-  createdAt         DateTime @default(now()) @map("created_at")
-
-  @@unique([statDate])
-  @@map("daily_statistics")
-}
-
-model SystemLog {
-  id         BigInt   @id @default(autoincrement()) @map("log_id")
-  userId     BigInt?  @map("user_id")
-  actionType String   @map("action_type") @db.VarChar(50)
-  targetType String?  @map("target_type") @db.VarChar(50)
-  targetId   BigInt?  @map("target_id")
-  ipAddress  String?  @map("ip_address") @db.VarChar(45)
-  userAgent  String?  @map("user_agent") @db.Text
-  details    String?  @db.Text
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@map("system_logs")
-}
-
-// ============================================
-// 15. Enums
+// 13. Enums
 // ============================================
 
 enum UserRole {
@@ -635,37 +438,6 @@ enum PetSize {
   SMALL
   MEDIUM
   LARGE
-}
-
-enum PostVisibility {
-  PUBLIC
-  FOLLOWERS
-  PRIVATE
-}
-
-enum PostStatus {
-  ACTIVE
-  DELETED
-  REPORTED
-}
-
-enum CommentStatus {
-  ACTIVE
-  DELETED
-}
-
-enum NotificationType {
-  LIKE
-  COMMENT
-  FOLLOW
-  MISSING
-  EMERGENCY
-  EVENT
-  APPOINTMENT
-  SYSTEM
-  WALKING_MATE // 산책 메이트 초대
-  WALKING_ACCEPTED // 산책 참가 승인
-  WALKING_REMINDER // 산책 알림
 }
 
 enum PetSizeFilter {
@@ -698,13 +470,6 @@ enum PetFriendshipStatus {
   PENDING
   ACCEPTED
   REJECTED
-}
-
-enum AgreementType {
-  TERMS
-  PRIVACY
-  LOCATION
-  MARKETING
 }
 
 enum FacilityType {
