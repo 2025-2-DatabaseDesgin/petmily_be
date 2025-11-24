@@ -18,11 +18,11 @@ export const createUser = async (data: {
   status?: UserStatus;
 }): Promise<User> => {
   return await prisma.user.create({
-    data: {
+      data: {
       username: data.username,
-      password: data.password,
+        password: data.password,
       email: data.email,
-      name: data.name,
+        name: data.name,
       birthDate: data.birthDate,
       phone: data.phone,
       profileImage: data.profileImage,
@@ -30,10 +30,10 @@ export const createUser = async (data: {
       latitude: data.latitude,
       longitude: data.longitude,
       isPetOwner: data.isPetOwner ?? false,
-      role: data.role ?? 'USER',
-      status: data.status ?? 'ACTIVE',
-    },
-  });
+      role: data.role ?? UserRole.USER,
+      status: data.status ?? UserStatus.ACTIVE,
+      },
+    });
 };
 
 export const findUserByUsername = async (username: string): Promise<User | null> => {
@@ -45,13 +45,13 @@ export const findUserByUsername = async (username: string): Promise<User | null>
 export const findUserByEmail = async (email: string): Promise<User | null> => {
   return await prisma.user.findUnique({ 
     where: { email } 
-  });
+        });
 };
 
 export const findUserById = async (id: bigint): Promise<User | null> => {
   return await prisma.user.findUnique({ 
     where: { id } 
-  });
+          });
 };
 
 export const updateUser = async (id: bigint, data: Partial<{
@@ -93,6 +93,6 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
   const user = await prisma.user.findUnique({
     where: { email },
     select: { id: true },
-  });
+      });
   return !!user;
 };

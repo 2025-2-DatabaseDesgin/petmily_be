@@ -18,8 +18,8 @@ export const loginController = async (req: Request, res: Response, next: NextFun
     const result = await loginService(loginIdentifier, password);
     
     res.sendSuccess(StatusCodes.OK, '로그인 성공', {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
       user: result.user,
     });
   } catch (error) {
@@ -66,8 +66,8 @@ export const refreshTokenController = async (req: Request, res: Response, next: 
     }
     const newTokens = await refreshTokenService(refreshToken);
     res.sendSuccess(StatusCodes.OK, 'Token refreshed successfully', {
-      accessToken: newTokens.accessToken,
-      refreshToken: newTokens.refreshToken,
+        accessToken: newTokens.accessToken,
+        refreshToken: newTokens.refreshToken,
     });
   } catch (error) {
     next(error);
