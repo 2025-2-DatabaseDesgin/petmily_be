@@ -1,56 +1,1423 @@
 openapi: 3.0.0
 info:
-  title: 백엔드 API
+  title: Petmily API
   version: 1.0.0
-  description: 백엔드 API 문서
+  description: 산책 중심 반려동물 관리 서비스 API
+
+servers:
+  - url: http://localhost:3000
+    description: 로컬 개발 서버
+
+tags:
+  - name: auth
+    description: 인증 관련 API
+  - name: users
+    description: 사용자 관리 API
+  - name: pets
+    description: 반려동물 관리 API
+  - name: follows
+    description: 팔로우 시스템 API
+  - name: routes
+    description: 산책로 관리 API
+  - name: facilities
+    description: 시설 관리 API
+  - name: walking-mates
+    description: 산책 메이트 모집 API
+  - name: sessions
+    description: 산책 세션 API
+  - name: health-logs
+    description: 반려동물 건강 로그 API
+  - name: reviews
+    description: 산책 후기 API
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        statusCode:
+          type: integer
+
+    # Auth Schemas
+    LoginRequest:
+      type: object
+      required:
+        - loginIdentifier
+        - password
+      properties:
+        loginIdentifier:
+          type: string
+          description: 사용자명 또는 이메일
+        password:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+        - name
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        phone:
+          type: string
+        region:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        isPetOwner:
+          type: boolean
+
+    # Pet Schemas
+    PetRequest:
+      type: object
+      required:
+        - petName
+        - species
+      properties:
+        petName:
+          type: string
+        species:
+          type: string
+          enum: [DOG, CAT, OTHER]
+        breed:
+          type: string
+        age:
+          type: integer
+        birthDate:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        isNeutered:
+          type: boolean
+        size:
+          type: string
+          enum: [SMALL, MEDIUM, LARGE]
+        weight:
+          type: number
+        personality:
+          type: string
+        healthStatus:
+          type: string
+        specialNotes:
+          type: string
+        profileImage:
+          type: string
+        registrationNumber:
+          type: string
+        microchipNumber:
+          type: string
+
+    # Route Schemas
+    RouteRequest:
+      type: object
+      required:
+        - routeName
+      properties:
+        routeName:
+          type: string
+        region:
+          type: string
+        distance:
+          type: number
+        duration:
+          type: integer
+        difficulty:
+          type: string
+          enum: [EASY, MODERATE, HARD]
+        pathData:
+          type: string
+        description:
+          type: string
+
+    # Facility Schemas
+    FacilityRequest:
+      type: object
+      required:
+        - name
+        - type
+        - address
+        - latitude
+        - longitude
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [CAFE, SHOP, HOSPITAL, PARK, OTHER]
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        phone:
+          type: string
+        description:
+          type: string
+        isSponsor:
+          type: boolean
+        discountInfo:
+          type: string
+        openingHours:
+          type: string
+        imageUrl:
+          type: string
+
+    # Walking Mate Schemas
+    WalkingMateRequest:
+      type: object
+      required:
+        - walkingDate
+        - location
+      properties:
+        routeId:
+          type: string
+        walkingDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        duration:
+          type: integer
+        maxParticipants:
+          type: integer
+        petSizeFilter:
+          type: string
+          enum: [ALL, SMALL, MEDIUM, LARGE]
+        description:
+          type: string
+
+    # Review Schemas
+    ReviewRequest:
+      type: object
+      required:
+        - sessionId
+        - overallRating
+      properties:
+        sessionId:
+          type: string
+        overallRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        routeRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        groupRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        distance:
+          type: number
+        duration:
+          type: integer
+        notes:
+          type: string
+        photoUrls:
+          type: array
+          items:
+            type: string
+        isPublic:
+          type: boolean
+
 paths:
-  /:
-    get:
-      summary: Hello World
-      responses:
-        "200":
-          description: 성공
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiResponse"
-  /users:
+  # ==================== Auth ====================
+  /auth/register:
     post:
+      tags:
+        - auth
       summary: 회원가입
-      tags:
-        - users
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
-        "201":
+        '201':
           description: 회원가입 성공
-        "400":
-          description: 이메일 중복 또는 유효하지 않은 요청
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiResponse"
-  /users/login:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: 잘못된 요청
+        '409':
+          description: 중복된 사용자명 또는 이메일
+
+  /auth/login:
     post:
-      summary: 로그인
-      description: 사용자 아이디와 비밀번호로 로그인합니다.
       tags:
-        - users
+        - auth
+      summary: 로그인
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/User"
+              $ref: '#/components/schemas/LoginRequest'
       responses:
-        "200":
+        '200':
           description: 로그인 성공
-        "400":
-          description: 로그인 실패 (잘못된 아이디 또는 비밀번호)
+        '401':
+          description: 인증 실패
+
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: 토큰 갱신
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: 토큰 갱신 성공
+
+  /auth/logout:
+    post:
+      tags:
+        - auth
+      summary: 로그아웃
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: 로그아웃 성공
+
+  /auth/me:
+    get:
+      tags:
+        - auth
+      summary: 현재 사용자 정보 조회
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 사용자 정보 조회 성공
+        '401':
+          description: 인증 필요
+
+  /auth/profile:
+    get:
+      tags:
+        - auth
+      summary: 프로필 조회
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 프로필 조회 성공
+
+  # ==================== Pets ====================
+  /pets:
+    post:
+      tags:
+        - pets
+      summary: 반려동물 등록
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetRequest'
+      responses:
+        '201':
+          description: 반려동물 등록 성공
+        '401':
+          description: 인증 필요
+
+    get:
+      tags:
+        - pets
+      summary: 내 반려동물 목록 조회
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 반려동물 목록 조회 성공
+
+  /pets/{id}:
+    get:
+      tags:
+        - pets
+      summary: 반려동물 상세 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 반려동물 상세 조회 성공
+        '404':
+          description: 반려동물을 찾을 수 없음
+
+    patch:
+      tags:
+        - pets
+      summary: 반려동물 정보 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetRequest'
+      responses:
+        '200':
+          description: 반려동물 정보 수정 성공
+        '403':
+          description: 권한 없음
+
+    delete:
+      tags:
+        - pets
+      summary: 반려동물 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 반려동물 삭제 성공
+
+  /pets/{id}/friends:
+    post:
+      tags:
+        - pets
+      summary: 반려동물 친구 요청
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetPetId:
+                  type: string
+      responses:
+        '201':
+          description: 친구 요청 전송 성공
+
+    get:
+      tags:
+        - pets
+      summary: 반려동물 친구 목록 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 친구 목록 조회 성공
+
+  /pets/friends/requests:
+    get:
+      tags:
+        - pets
+      summary: 받은 친구 요청 목록 조회
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 친구 요청 목록 조회 성공
+
+  /pets/friends/{id}:
+    patch:
+      tags:
+        - pets
+      summary: 친구 요청 승인/거절
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accept:
+                  type: boolean
+      responses:
+        '200':
+          description: 친구 요청 처리 성공
+
+  # ==================== Follows ====================
+  /follows/{userId}:
+    post:
+      tags:
+        - follows
+      summary: 팔로우
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: 팔로우 성공
+
+    delete:
+      tags:
+        - follows
+      summary: 언팔로우
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 언팔로우 성공
+
+  /follows/{userId}/status:
+    get:
+      tags:
+        - follows
+      summary: 팔로우 상태 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 팔로우 상태 조회 성공
+
+  /follows/{userId}/followers:
+    get:
+      tags:
+        - follows
+      summary: 팔로워 목록 조회
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: 팔로워 목록 조회 성공
+
+  /follows/{userId}/following:
+    get:
+      tags:
+        - follows
+      summary: 팔로잉 목록 조회
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 팔로잉 목록 조회 성공
+
+  /follows/{userId}/stats:
+    get:
+      tags:
+        - follows
+      summary: 팔로우 통계 조회
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 팔로우 통계 조회 성공
+
+  # ==================== Routes ====================
+  /routes:
+    get:
+      tags:
+        - routes
+      summary: 산책로 목록 조회
+      parameters:
+        - name: region
+          in: query
+          schema:
+            type: string
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [EASY, MODERATE, HARD]
+        - name: minDistance
+          in: query
+          schema:
+            type: number
+        - name: maxDistance
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 산책로 목록 조회 성공
+
+    post:
+      tags:
+        - routes
+      summary: 산책로 생성
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+      responses:
+        '201':
+          description: 산책로 생성 성공
+
+  /routes/{id}:
+    get:
+      tags:
+        - routes
+      summary: 산책로 상세 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 산책로 상세 조회 성공
+
+    patch:
+      tags:
+        - routes
+      summary: 산책로 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+      responses:
+        '200':
+          description: 산책로 수정 성공
+
+    delete:
+      tags:
+        - routes
+      summary: 산책로 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 산책로 삭제 성공
+
+  /routes/{id}/facilities:
+    get:
+      tags:
+        - routes
+      summary: 산책로 주변 시설 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 시설 목록 조회 성공
+
+  # ==================== Facilities ====================
+  /facilities:
+    get:
+      tags:
+        - facilities
+      summary: 시설 목록 조회
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [CAFE, SHOP, HOSPITAL, PARK, OTHER]
+        - name: isSponsor
+          in: query
+          schema:
+            type: boolean
+        - name: latitude
+          in: query
+          schema:
+            type: number
+        - name: longitude
+          in: query
+          schema:
+            type: number
+        - name: radiusKm
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 시설 목록 조회 성공
+
+    post:
+      tags:
+        - facilities
+      summary: 시설 생성 (관리자 전용)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityRequest'
+      responses:
+        '201':
+          description: 시설 생성 성공
+        '403':
+          description: 관리자 권한 필요
+
+  /facilities/{id}:
+    get:
+      tags:
+        - facilities
+      summary: 시설 상세 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 시설 상세 조회 성공
+
+    patch:
+      tags:
+        - facilities
+      summary: 시설 수정 (관리자 전용)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacilityRequest'
+      responses:
+        '200':
+          description: 시설 수정 성공
+
+    delete:
+      tags:
+        - facilities
+      summary: 시설 삭제 (관리자 전용)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 시설 삭제 성공
+
+  # ==================== Walking Mates ====================
+  /walking-mates:
+    get:
+      tags:
+        - walking-mates
+      summary: 산책 메이트 목록 조회
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [OPEN, FULL, COMPLETED, CANCELLED]
+        - name: region
+          in: query
+          schema:
+            type: string
+        - name: walkingDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: petSizeFilter
+          in: query
+          schema:
+            type: string
+            enum: [ALL, SMALL, MEDIUM, LARGE]
+        - name: latitude
+          in: query
+          schema:
+            type: number
+        - name: longitude
+          in: query
+          schema:
+            type: number
+        - name: radiusKm
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 산책 메이트 목록 조회 성공
+
+    post:
+      tags:
+        - walking-mates
+      summary: 산책 메이트 모집 생성
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalkingMateRequest'
+      responses:
+        '201':
+          description: 모집 생성 성공
+
+  /walking-mates/{id}:
+    get:
+      tags:
+        - walking-mates
+      summary: 산책 메이트 상세 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 산책 메이트 상세 조회 성공
+
+    patch:
+      tags:
+        - walking-mates
+      summary: 산책 메이트 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalkingMateRequest'
+      responses:
+        '200':
+          description: 산책 메이트 수정 성공
+
+    delete:
+      tags:
+        - walking-mates
+      summary: 산책 메이트 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 산책 메이트 삭제 성공
+
+  /walking-mates/{id}/join:
+    post:
+      tags:
+        - walking-mates
+      summary: 산책 메이트 참가 신청
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                petIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: 참가 신청 성공
+
+  /walking-mates/{id}/leave:
+    delete:
+      tags:
+        - walking-mates
+      summary: 산책 메이트 참가 취소
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 참가 취소 성공
+
+  /walking-mates/participants/{id}/approve:
+    patch:
+      tags:
+        - walking-mates
+      summary: 참가 승인 (호스트 전용)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 참가 승인 성공
+
+  /walking-mates/participants/{id}/reject:
+    patch:
+      tags:
+        - walking-mates
+      summary: 참가 거절 (호스트 전용)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 참가 거절 성공
+
+  /walking-mates/waitlist/{id}:
+    delete:
+      tags:
+        - walking-mates
+      summary: 대기 취소
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 대기 취소 성공
+
+  # ==================== Sessions ====================
+  /sessions:
+    get:
+      tags:
+        - sessions
+      summary: 산책 세션 목록 조회
+      parameters:
+        - name: mateId
+          in: query
+          schema:
+            type: string
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 산책 세션 목록 조회 성공
+
+    post:
+      tags:
+        - sessions
+      summary: 산책 세션 시작 (호스트 전용)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mateId:
+                  type: string
+      responses:
+        '201':
+          description: 산책 세션 시작 성공
+
+  /sessions/{id}:
+    get:
+      tags:
+        - sessions
+      summary: 산책 세션 상세 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 산책 세션 상세 조회 성공
+
+  /sessions/{id}/end:
+    patch:
+      tags:
+        - sessions
+      summary: 산책 세션 종료 (호스트 전용)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actualDistanceM:
+                  type: integer
+                actualDurationS:
+                  type: integer
+                pathData:
+                  type: string
+      responses:
+        '200':
+          description: 산책 세션 종료 성공
+
+  # ==================== Health Logs ====================
+  /health-logs:
+    post:
+      tags:
+        - health-logs
+      summary: 건강 로그 생성
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                participantPetId:
+                  type: string
+                preWeight:
+                  type: number
+                preCondition:
+                  type: string
+                  enum: [EXCELLENT, GOOD, NORMAL, TIRED, SICK]
+                distanceM:
+                  type: integer
+                durationS:
+                  type: integer
+                avgSpeedMps:
+                  type: number
+                maxSpeedMps:
+                  type: number
+                caloriesBurned:
+                  type: integer
+                stepCount:
+                  type: integer
+                postCondition:
+                  type: string
+                  enum: [EXCELLENT, GOOD, NORMAL, TIRED, SICK]
+                needsRest:
+                  type: boolean
+                hydrationLevel:
+                  type: string
+                  enum: [GOOD, MODERATE, LOW]
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: 건강 로그 생성 성공
+
+  /health-logs/{id}:
+    get:
+      tags:
+        - health-logs
+      summary: 건강 로그 상세 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 건강 로그 상세 조회 성공
+
+    patch:
+      tags:
+        - health-logs
+      summary: 건강 로그 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 건강 로그 수정 성공
+
+    delete:
+      tags:
+        - health-logs
+      summary: 건강 로그 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 건강 로그 삭제 성공
+
+  /health-logs/pets/{petId}:
+    get:
+      tags:
+        - health-logs
+      summary: 반려동물의 건강 로그 목록 조회
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 건강 로그 목록 조회 성공
+
+  # ==================== Reviews ====================
+  /reviews:
+    post:
+      tags:
+        - reviews
+      summary: 후기 작성
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '201':
+          description: 후기 작성 성공
+
+  /reviews/{id}:
+    get:
+      tags:
+        - reviews
+      summary: 후기 상세 조회
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 후기 상세 조회 성공
+
+    patch:
+      tags:
+        - reviews
+      summary: 후기 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
           content:
             application/json:
               schema:
+              $ref: '#/components/schemas/ReviewRequest'
+      responses:
+        '200':
+          description: 후기 수정 성공
+
+    delete:
+      tags:
+        - reviews
+      summary: 후기 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 후기 삭제 성공
+
+  /reviews/sessions/{sessionId}:
+    get:
+      tags:
+        - reviews
+      summary: 세션의 후기 목록 조회
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 후기 목록 조회 성공
+
+  /reviews/routes/{routeId}:
+    get:
+      tags:
+        - reviews
+      summary: 산책로의 후기 목록 조회
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 후기 목록 조회 성공
+
+  /reviews/users/{userId}:
+    get:
+      tags:
+        - reviews
+      summary: 사용자의 후기 목록 조회
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 후기 목록 조회 성공

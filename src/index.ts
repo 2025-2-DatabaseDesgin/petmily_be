@@ -1,6 +1,14 @@
 import express from "express";
 import userRouter from "./routes/user";
 import authRouter from "./routes/auth";
+import petRouter from "./routes/pet";
+import followRouter from "./routes/follow";
+import routeRouter from "./routes/route";
+import facilityRouter from "./routes/facility";
+import walkingMateRouter from "./routes/walking-mate";
+import sessionRouter from "./routes/session";
+import healthLogRouter from "./routes/health-log";
+import reviewRouter from "./routes/review";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
 import dotenv from "dotenv";
@@ -57,8 +65,18 @@ app.get(
   })
 );
 
+// 라우터 등록
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/pets", petRouter);
+app.use("/follows", followRouter);
+app.use("/routes", routeRouter);
+app.use("/facilities", facilityRouter);
+app.use("/walking-mates", walkingMateRouter);
+app.use("/sessions", sessionRouter);
+app.use("/health-logs", healthLogRouter);
+app.use("/reviews", reviewRouter);
+
 // 글로벌 에러 핸들러 - 모든 라우트 정의 후에 추가
 app.use(errorHandler);
 
