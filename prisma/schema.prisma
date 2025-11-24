@@ -1,3 +1,6 @@
+// ============================================
+// Petmily 산책 중심 DB 스키마
+// ============================================
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -10,18 +13,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model RefreshToken {
-  id        BigInt   @id @default(autoincrement())
-  token     String   @unique @db.VarChar(512)
-  userId    BigInt   @map("user_id")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("refresh_tokens")
-}
+// ============================================
+// 1. 기본 엔티티 (사용자 및 인증)
+// ============================================
 
 model User {
   id           BigInt     @id @default(autoincrement()) @map("user_id")
@@ -52,15 +46,38 @@ model User {
   followers           Follow[]             @relation("UserFollowers")
   userActivityStats   UserActivityStats?
   userAgreements      UserAgreement[]
-  walkingMates        WalkingMate[]
-  walkingParticipants WalkingParticipant[]
-  walkingRecords      WalkingRecord[]
-  walkingRoutes       WalkingRoute[]
-  systemLogs          SystemLog[]
   refreshTokens       RefreshToken[]
+  systemLogs          SystemLog[]
+  // 산책 관련
+  walkingRoutes       WalkingRoute[]
+  walkingMatesHosted  WalkingMate[]
+  walkingParticipants WalkingParticipant[]
+  walkingWaitlist     WalkingWaitlist[]
+  walkingReviews      WalkingReview[]
 
+  @@index([username])
+  @@index([email])
+  @@index([region])
+  @@index([latitude, longitude])
   @@map("users")
 }
+
+model RefreshToken {
+  id        BigInt   @id @default(autoincrement())
+  token     String   @unique @db.VarChar(512)
+  userId    BigInt   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ============================================
+// 2. 반려동물
+// ============================================
 
 model Pet {
   id                 BigInt     @id @default(autoincrement()) @map("pet_id")
@@ -85,15 +102,323 @@ model Pet {
   updatedAt          DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  posts               Post[]
-  petFriendships1     PetFriendship[]      @relation("Pet1")
-  petFriendships2     PetFriendship[]      @relation("Pet2")
-  walkingParticipants WalkingParticipant[]
-  walkingRecords      WalkingRecord[]
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts                  Post[]
+  petFriendships1        PetFriendship[]         @relation("Pet1")
+  petFriendships2        PetFriendship[]         @relation("Pet2")
+  walkingParticipantPets WalkingParticipantPet[]
 
+  @@index([userId])
+  @@index([species])
+  @@index([size])
   @@map("pets")
 }
+
+model PetFriendship {
+  id          BigInt              @id @default(autoincrement()) @map("friendship_id")
+  petId1      BigInt              @map("pet_id_1")
+  petId2      BigInt              @map("pet_id_2")
+  status      PetFriendshipStatus @default(PENDING)
+  requestedAt DateTime            @default(now()) @map("requested_at")
+  acceptedAt  DateTime?           @map("accepted_at")
+
+  // Relations
+  pet1 Pet @relation("Pet1", fields: [petId1], references: [id], onDelete: Cascade)
+  pet2 Pet @relation("Pet2", fields: [petId2], references: [id], onDelete: Cascade)
+
+  @@unique([petId1, petId2], map: "uk_pet_friendship")
+  @@map("pet_friendships")
+}
+
+// ============================================
+// 3. 팔로우
+// ============================================
+
+model Follow {
+  id          BigInt   @id @default(autoincrement()) @map("follow_id")
+  followerId  BigInt   @map("follower_id")
+  followingId BigInt   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  follower  User @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId], map: "uk_follower_following")
+  @@map("follows")
+}
+
+// ============================================
+// 4. 산책로 (서버 정적 데이터)
+// ============================================
+
+model WalkingRoute {
+  id          BigInt           @id @default(autoincrement()) @map("route_id")
+  createdBy   BigInt?          @map("created_by") // 등록자 (서버 등록 시 NULL)
+  routeName   String           @map("route_name") @db.VarChar(100)
+  region      String?          @db.VarChar(100)
+  distance    Decimal?         @db.Decimal(5, 2) // km
+  duration    Int? // 분
+  difficulty  RouteDifficulty?
+  pathData    String?          @map("path_data") @db.Text // GeoJSON
+  description String?          @db.Text
+  rating      Decimal          @default(0.00) @db.Decimal(3, 2)
+  reviewCount Int              @default(0) @map("review_count")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  creator        User?           @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  walkingMates   WalkingMate[]
+  facilityRoutes FacilityRoute[]
+
+  @@index([region])
+  @@index([difficulty])
+  @@map("walking_routes")
+}
+
+// ============================================
+// 5. 시설 (후원 시설)
+// ============================================
+
+model Facility {
+  id           BigInt       @id @default(autoincrement()) @map("facility_id")
+  name         String       @db.VarChar(255)
+  type         FacilityType
+  address      String       @db.VarChar(255)
+  latitude     Decimal      @db.Decimal(10, 8)
+  longitude    Decimal      @db.Decimal(11, 8)
+  phone        String?      @db.VarChar(20)
+  description  String?      @db.Text
+  isSponsor    Boolean      @default(false) @map("is_sponsor") // 후원 여부
+  discountInfo String?      @map("discount_info") @db.Text
+  openingHours String?      @map("opening_hours") @db.VarChar(100)
+  rating       Decimal      @default(0.00) @db.Decimal(3, 2)
+  imageUrl     String?      @map("image_url") @db.VarChar(255)
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  facilityRoutes FacilityRoute[]
+
+  @@index([type])
+  @@index([latitude, longitude])
+  @@index([isSponsor])
+  @@map("facilities")
+}
+
+model FacilityRoute {
+  routeId            BigInt  @map("route_id")
+  facilityId         BigInt  @map("facility_id")
+  visitOrder         Int?    @map("visit_order") // 방문 순서
+  distanceFromStartM Int?    @map("distance_from_start_m") // 출발지로부터 거리(미터)
+  isMandatory        Boolean @default(false) @map("is_mandatory")
+  notes              String? @db.Text
+
+  // Relations
+  route    WalkingRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  facility Facility     @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+
+  @@id([routeId, facilityId])
+  @@index([routeId, visitOrder])
+  @@map("facility_routes")
+}
+
+// ============================================
+// 6. 산책 메이트 모집
+// ============================================
+
+model WalkingMate {
+  id                  BigInt            @id @default(autoincrement()) @map("mate_id")
+  hostUserId          BigInt            @map("host_user_id")
+  routeId             BigInt?           @map("route_id") // 참고 산책로
+  walkingDate         DateTime          @map("walking_date")
+  location            String            @db.VarChar(255)
+  latitude            Decimal?          @db.Decimal(10, 8)
+  longitude           Decimal?          @db.Decimal(11, 8)
+  duration            Int? // 예상 소요 시간(분)
+  maxParticipants     Int               @default(5) @map("max_participants")
+  currentParticipants Int               @default(1) @map("current_participants")
+  petSizeFilter       PetSizeFilter     @default(ALL) @map("pet_size_filter")
+  description         String?           @db.Text
+  status              WalkingMateStatus @default(OPEN)
+  createdAt           DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  hostUser        User                 @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
+  route           WalkingRoute?        @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  participants    WalkingParticipant[]
+  waitlist        WalkingWaitlist[]
+  walkingSessions WalkingSession[]
+
+  @@index([hostUserId])
+  @@index([status])
+  @@index([walkingDate])
+  @@index([latitude, longitude])
+  @@map("walking_mates")
+}
+
+// ============================================
+// 7. 산책 메이트 참가자
+// ============================================
+
+model WalkingParticipant {
+  id       BigInt                   @id @default(autoincrement()) @map("participant_id")
+  mateId   BigInt                   @map("mate_id")
+  userId   BigInt                   @map("user_id")
+  status   WalkingParticipantStatus @default(PENDING)
+  joinedAt DateTime                 @default(now()) @map("joined_at")
+
+  // Relations
+  mate                   WalkingMate             @relation(fields: [mateId], references: [id], onDelete: Cascade)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walkingParticipantPets WalkingParticipantPet[]
+
+  @@unique([mateId, userId], map: "uk_mate_user")
+  @@index([mateId])
+  @@index([userId])
+  @@index([status])
+  @@map("walking_participants")
+}
+
+// ============================================
+// 8. 산책 참가 반려동물 (다중 반려동물 지원)
+// ============================================
+
+model WalkingParticipantPet {
+  id            BigInt @id @default(autoincrement()) @map("participant_pet_id")
+  participantId BigInt @map("participant_id")
+  petId         BigInt @map("pet_id")
+
+  // Relations
+  participant WalkingParticipant   @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  pet         Pet                  @relation(fields: [petId], references: [id], onDelete: Cascade)
+  healthLog   PetWalkingHealthLog?
+
+  @@unique([participantId, petId], map: "uk_participant_pet")
+  @@index([participantId])
+  @@index([petId])
+  @@map("walking_participant_pets")
+}
+
+// ============================================
+// 9. 반려동물 건강 로그 (1:1 관계)
+// ============================================
+
+model PetWalkingHealthLog {
+  id               BigInt @id @default(autoincrement()) @map("log_id")
+  participantPetId BigInt @unique @map("participant_pet_id") // 1:1 관계
+
+  // 산책 전
+  preWeight    Decimal?      @map("pre_weight") @db.Decimal(5, 2) // kg
+  preCondition PetCondition? @map("pre_condition")
+
+  // 산책 중
+  distanceM      Int?     @map("distance_m")
+  durationS      Int?     @map("duration_s")
+  avgSpeedMps    Decimal? @map("avg_speed_mps") @db.Decimal(4, 2) // m/s
+  maxSpeedMps    Decimal? @map("max_speed_mps") @db.Decimal(4, 2)
+  caloriesBurned Int?     @map("calories_burned") // kcal
+  stepCount      Int?     @map("step_count")
+
+  // 산책 후
+  postCondition  PetCondition?   @map("post_condition")
+  needsRest      Boolean         @default(false) @map("needs_rest")
+  hydrationLevel HydrationLevel? @map("hydration_level")
+
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  participantPet WalkingParticipantPet @relation(fields: [participantPetId], references: [id], onDelete: Cascade)
+
+  @@map("pet_walking_health_logs")
+}
+
+// ============================================
+// 10. 산책 대기열
+// ============================================
+
+model WalkingWaitlist {
+  id        BigInt         @id @default(autoincrement()) @map("wait_id")
+  mateId    BigInt         @map("mate_id")
+  userId    BigInt         @map("user_id")
+  priority  Int // 신청 순서
+  status    WaitlistStatus @default(WAITING)
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  mate WalkingMate @relation(fields: [mateId], references: [id], onDelete: Cascade)
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([mateId, userId], map: "uk_mate_user_waitlist")
+  @@index([mateId, priority])
+  @@map("walking_waitlist")
+}
+
+// ============================================
+// 11. 산책 세션 (실제 진행된 산책)
+// ============================================
+
+model WalkingSession {
+  id               BigInt    @id @default(autoincrement()) @map("session_id")
+  mateId           BigInt    @map("mate_id")
+  startedAt        DateTime? @map("started_at")
+  endedAt          DateTime? @map("ended_at")
+  actualDistanceM  Int?      @map("actual_distance_m")
+  actualDurationS  Int?      @map("actual_duration_s")
+  pathData         String?   @map("path_data") @db.Text // GeoJSON
+  participantCount Int?      @map("participant_count")
+  totalPets        Int?      @map("total_pets")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  mate           WalkingMate     @relation(fields: [mateId], references: [id], onDelete: Cascade)
+  walkingReviews WalkingReview[]
+
+  @@index([mateId])
+  @@index([startedAt])
+  @@map("walking_sessions")
+}
+
+// ============================================
+// 12. 산책 후기 (산책 전체 후기)
+// ============================================
+
+model WalkingReview {
+  id         BigInt @id @default(autoincrement()) @map("review_id")
+  sessionId  BigInt @map("session_id")
+  reviewerId BigInt @map("reviewer_id")
+
+  // 평가
+  overallRating Int  @map("overall_rating")
+  routeRating   Int? @map("route_rating")
+  groupRating   Int? @map("group_rating")
+
+  // 기록
+  walkingDate DateTime @map("walking_date")
+  distance    Decimal? @db.Decimal(5, 2) // km
+  duration    Int? // 분
+
+  // 후기
+  notes     String? @db.Text
+  photoUrls Json?   @map("photo_urls") // ["url1", "url2"]
+
+  isPublic  Boolean  @default(true) @map("is_public")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  session  WalkingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  reviewer User           @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, reviewerId], map: "uk_session_reviewer")
+  @@index([sessionId])
+  @@index([reviewerId])
+  @@index([overallRating(sort: Desc)])
+  @@map("walking_reviews")
+}
+
+// ============================================
+// 13. 소셜 기능 (게시글, 댓글, 좋아요 등)
+// ============================================
 
 model Post {
   id           BigInt         @id @default(autoincrement()) @map("post_id")
@@ -155,20 +480,6 @@ model Like {
   @@map("likes")
 }
 
-model Follow {
-  id          BigInt   @id @default(autoincrement()) @map("follow_id")
-  followerId  BigInt   @map("follower_id")
-  followingId BigInt   @map("following_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  // Relations
-  follower  User @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
-  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
-
-  @@unique([followerId, followingId])
-  @@map("follows")
-}
-
 model Notification {
   id               BigInt           @id @default(autoincrement()) @map("notification_id")
   userId           BigInt           @map("user_id")
@@ -224,99 +535,9 @@ model PostImage {
   @@map("post_images")
 }
 
-model WalkingMate {
-  id                  BigInt            @id @default(autoincrement()) @map("mate_id")
-  hostUserId          BigInt            @map("host_user_id")
-  walkingDate         DateTime          @map("walking_date")
-  location            String            @db.VarChar(255)
-  latitude            Decimal?          @db.Decimal(10, 8)
-  longitude           Decimal?          @db.Decimal(11, 8)
-  duration            Int?
-  maxParticipants     Int               @default(5) @map("max_participants")
-  currentParticipants Int               @default(1) @map("current_participants")
-  petSizeFilter       PetSizeFilter     @default(ALL) @map("pet_size_filter")
-  description         String?           @db.Text
-  status              WalkingMateStatus @default(OPEN)
-  createdAt           DateTime          @default(now()) @map("created_at")
-
-  // Relations
-  hostUser     User                 @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
-  participants WalkingParticipant[]
-
-  @@map("walking_mates")
-}
-
-model WalkingParticipant {
-  id       BigInt                   @id @default(autoincrement()) @map("participant_id")
-  mateId   BigInt                   @map("mate_id")
-  userId   BigInt                   @map("user_id")
-  petId    BigInt?                  @map("pet_id")
-  status   WalkingParticipantStatus @default(PENDING)
-  joinedAt DateTime                 @default(now()) @map("joined_at")
-
-  // Relations
-  mate WalkingMate @relation(fields: [mateId], references: [id], onDelete: Cascade)
-  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pet  Pet?        @relation(fields: [petId], references: [id], onDelete: SetNull)
-
-  @@map("walking_participants")
-}
-
-model WalkingRoute {
-  id          BigInt           @id @default(autoincrement()) @map("route_id")
-  routeName   String           @map("route_name") @db.VarChar(100)
-  region      String?          @db.VarChar(100)
-  distance    Decimal?         @db.Decimal(5, 2)
-  duration    Int?
-  difficulty  RouteDifficulty?
-  pathData    String?          @map("path_data") @db.Text
-  description String?          @db.Text
-  rating      Decimal          @default(0.00) @db.Decimal(3, 2)
-  reviewCount Int              @default(0) @map("review_count")
-  createdBy   BigInt?          @map("created_by")
-  createdAt   DateTime         @default(now()) @map("created_at")
-
-  // Relations
-  creator        User?           @relation(fields: [createdBy], references: [id], onDelete: SetNull)
-  walkingRecords WalkingRecord[]
-
-  @@map("walking_routes")
-}
-
-model WalkingRecord {
-  id          BigInt   @id @default(autoincrement()) @map("record_id")
-  userId      BigInt   @map("user_id")
-  petId       BigInt?  @map("pet_id")
-  routeId     BigInt?  @map("route_id")
-  walkingDate DateTime @map("walking_date")
-  distance    Decimal? @db.Decimal(5, 2)
-  duration    Int?
-  pathData    String?  @map("path_data") @db.Text
-  notes       String?  @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pet   Pet?          @relation(fields: [petId], references: [id], onDelete: SetNull)
-  route WalkingRoute? @relation(fields: [routeId], references: [id], onDelete: SetNull)
-
-  @@map("walking_records")
-}
-
-model PetFriendship {
-  id          BigInt              @id @default(autoincrement()) @map("friendship_id")
-  petId1      BigInt              @map("pet_id_1")
-  petId2      BigInt              @map("pet_id_2")
-  status      PetFriendshipStatus @default(PENDING)
-  requestedAt DateTime            @default(now()) @map("requested_at")
-  acceptedAt  DateTime?           @map("accepted_at")
-
-  // Relations
-  pet1 Pet @relation("Pet1", fields: [petId1], references: [id], onDelete: Cascade)
-  pet2 Pet @relation("Pet2", fields: [petId2], references: [id], onDelete: Cascade)
-
-  @@map("pet_friendships")
-}
+// ============================================
+// 14. 통계 및 활동
+// ============================================
 
 model UserActivityStats {
   id                BigInt   @id @default(autoincrement()) @map("stat_id")
@@ -384,7 +605,10 @@ model SystemLog {
   @@map("system_logs")
 }
 
-// Enums
+// ============================================
+// 15. Enums
+// ============================================
+
 enum UserRole {
   USER
   ADMIN
@@ -439,6 +663,9 @@ enum NotificationType {
   EVENT
   APPOINTMENT
   SYSTEM
+  WALKING_MATE // 산책 메이트 초대
+  WALKING_ACCEPTED // 산책 참가 승인
+  WALKING_REMINDER // 산책 알림
 }
 
 enum PetSizeFilter {
@@ -478,4 +705,32 @@ enum AgreementType {
   PRIVACY
   LOCATION
   MARKETING
+}
+
+enum FacilityType {
+  CAFE
+  SHOP
+  HOSPITAL
+  PARK
+  OTHER
+}
+
+enum PetCondition {
+  EXCELLENT
+  GOOD
+  NORMAL
+  TIRED
+  SICK
+}
+
+enum HydrationLevel {
+  GOOD
+  MODERATE
+  LOW
+}
+
+enum WaitlistStatus {
+  WAITING
+  MOVED
+  CANCELLED
 }
