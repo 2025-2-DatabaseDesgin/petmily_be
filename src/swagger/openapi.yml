@@ -5,7 +5,9 @@ info:
   description: 산책 중심 반려동물 관리 서비스 API
 
 servers:
-  - url: http://localhost:3000
+  - url: https://petmily.p-e.kr
+    description: 프로덕션 서버
+  - url: http://localhost:8000
     description: 로컬 개발 서버
 
 tags:

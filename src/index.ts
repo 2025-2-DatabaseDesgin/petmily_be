@@ -60,7 +60,7 @@ app.get(
   "/docs",
   swaggerUi.setup(swaggerDocument, {
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: "HANA API Documentation",
+    customSiteTitle: "Petmily API Documentation",
     swaggerOptions: { url: "/docs/swagger.json", validatorUrl: null },
   })
 );
