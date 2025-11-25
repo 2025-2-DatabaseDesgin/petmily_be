@@ -40,11 +40,15 @@ export const snakeToCamelMiddleware = (req: any, res: any, next: any) => {
 };
 
 // Express 미들웨어: 응답 본문의 키를 카멜 케이스에서 스네이크 케이스로 변환
+import { serializeBigInt } from "./bigint.util";
+
 export const camelToSnakeMiddleware = (req: any, res: any, next: any) => {
   const originalJson = res.json;
 
   res.json = function(body: any) {
-    const converted = convertKeys(body, toSnakeCase);
+    // BigInt 직렬화 후 케이스 변환
+    const serialized = serializeBigInt(body);
+    const converted = convertKeys(serialized, toSnakeCase);
     return originalJson.call(this, converted);
   };
 

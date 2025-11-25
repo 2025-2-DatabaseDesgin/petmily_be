@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { Request, Response, NextFunction } from "express";
+import { serializeBigInt } from "./bigint.util";
 
 interface ErrorWithStatusCode extends Error {
   statusCode?: number;
@@ -20,7 +21,7 @@ class ApiResponse {
     return {
       statusCode,
       message,
-      data,
+      data: serializeBigInt(data),
     };
   }
   static error(
@@ -32,8 +33,8 @@ class ApiResponse {
     return {
       statusCode,
       message,
-      error,
-      data,
+      error: serializeBigInt(error),
+      data: serializeBigInt(data),
     };
   }
 }
@@ -75,7 +76,7 @@ export const errorHandler = (
   const statusCode = err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
   const message = err.message || "서버 내부 오류가 발생했습니다.";
 
-  res.status(statusCode).json(ApiResponse.error(statusCode, message));
+  res.status(statusCode).json(ApiResponse.error(statusCode, message, null, null));
 };
 
 export default {

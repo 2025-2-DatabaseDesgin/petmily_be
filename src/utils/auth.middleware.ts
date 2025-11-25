@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { verifyToken } from './jwt';
 import { PrismaClient, User as PrismaAppUser } from '@prisma/client';
+import { serializeBigInt } from './bigint.util';
 
 const prisma = new PrismaClient();
 
@@ -64,7 +65,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
  */
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-        res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Authentication required. No user data found on request.' });
+        res.status(StatusCodes.UNAUTHORIZED).json(serializeBigInt({ message: 'Authentication required. No user data found on request.' }));
         return;
     }
     next();
@@ -76,12 +77,12 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
 export const authorizeRole = (requiredRole: string) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-        res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Authentication required.' });
+        res.status(StatusCodes.UNAUTHORIZED).json(serializeBigInt({ message: 'Authentication required.' }));
         return;
     }
     
     if (req.user.role !== requiredRole) {
-      res.status(StatusCodes.FORBIDDEN).json({ message: `Forbidden: Role "${requiredRole}" required.` });
+      res.status(StatusCodes.FORBIDDEN).json(serializeBigInt({ message: `Forbidden: Role "${requiredRole}" required.` }));
       return;
     }
     next();
