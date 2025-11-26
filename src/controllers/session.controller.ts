@@ -17,7 +17,7 @@ export const startSessionController = async (req: Request, res: Response, next: 
 
     const { mateId } = req.body;
     if (!mateId) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'mateId is required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'mateId는 필수입니다.');
     }
 
     const session = await startSessionService(BigInt(mateId), userId);

@@ -36,7 +36,7 @@ export const createWalkingMateController = async (req: Request, res: Response, n
     if (!walkingDate || !location) {
       return res.status(StatusCodes.BAD_REQUEST).sendError(
         StatusCodes.BAD_REQUEST,
-        'walkingDate and location are required'
+        'walkingDate와 location은 필수입니다.'
       );
     }
 
@@ -260,7 +260,7 @@ export const joinWalkingMateController = async (req: Request, res: Response, nex
     if (!petIds || !Array.isArray(petIds) || petIds.length === 0) {
       return res.status(StatusCodes.BAD_REQUEST).sendError(
         StatusCodes.BAD_REQUEST,
-        'petIds (array) is required'
+        'petIds (배열)는 필수입니다.'
       );
     }
 

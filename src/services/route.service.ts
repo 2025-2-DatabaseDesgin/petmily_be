@@ -56,7 +56,7 @@ export const getRoutesService = async (filters?: {
 export const getRouteDetailService = async (routeId: bigint) => {
   const route = await findRouteById(routeId);
   if (!route) {
-    throw Object.assign(new Error('Route not found'), { statusCode: 404 });
+    throw Object.assign(new Error('산책로를 찾을 수 없습니다.'), { statusCode: 404 });
   }
   return route;
 };
@@ -78,7 +78,7 @@ export const updateRouteService = async (
   // 생성자 확인
   const isCreator = await isRouteCreator(routeId, userId);
   if (!isCreator) {
-    throw Object.assign(new Error('Not authorized to update this route'), { statusCode: 403 });
+    throw Object.assign(new Error('이 산책로를 수정할 권한이 없습니다.'), { statusCode: 403 });
   }
 
   return updateRoute(routeId, data);
@@ -89,7 +89,7 @@ export const deleteRouteService = async (routeId: bigint, userId: bigint) => {
   // 생성자 확인
   const isCreator = await isRouteCreator(routeId, userId);
   if (!isCreator) {
-    throw Object.assign(new Error('Not authorized to delete this route'), { statusCode: 403 });
+    throw Object.assign(new Error('이 산책로를 삭제할 권한이 없습니다.'), { statusCode: 403 });
   }
 
   return deleteRoute(routeId);

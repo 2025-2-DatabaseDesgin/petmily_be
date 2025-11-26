@@ -32,7 +32,7 @@ export const createReviewService = async (
   // 세션 정보 조회
   const session = await findSessionById(sessionId);
   if (!session) {
-    throw Object.assign(new Error('Session not found'), { statusCode: 404 });
+    throw Object.assign(new Error('세션을 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 참가자 확인
@@ -41,12 +41,12 @@ export const createReviewService = async (
     session.mate.participants.some((p) => p.userId === reviewerId);
 
   if (!isParticipant) {
-    throw Object.assign(new Error('Only participants can write reviews'), { statusCode: 403 });
+    throw Object.assign(new Error('참가자만 후기를 작성할 수 있습니다.'), { statusCode: 403 });
   }
 
   // 평점 범위 검증
   if (data.overallRating < 1 || data.overallRating > 5) {
-    throw Object.assign(new Error('Rating must be between 1 and 5'), { statusCode: 400 });
+    throw Object.assign(new Error('평점은 1부터 5까지의 값이어야 합니다.'), { statusCode: 400 });
   }
 
   return await prisma.$transaction(async (tx) => {
@@ -87,7 +87,7 @@ export const createReviewService = async (
 export const getReviewDetailService = async (reviewId: bigint) => {
   const review = await findReviewById(reviewId);
   if (!review) {
-    throw Object.assign(new Error('Review not found'), { statusCode: 404 });
+    throw Object.assign(new Error('후기를 찾을 수 없습니다.'), { statusCode: 404 });
   }
   return review;
 };
@@ -124,17 +124,17 @@ export const updateReviewService = async (
 ) => {
   const review = await findReviewById(reviewId);
   if (!review) {
-    throw Object.assign(new Error('Review not found'), { statusCode: 404 });
+    throw Object.assign(new Error('후기를 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 작성자 확인
   if (review.reviewerId !== userId) {
-    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
   }
 
   // 평점 범위 검증
   if (data.overallRating && (data.overallRating < 1 || data.overallRating > 5)) {
-    throw Object.assign(new Error('Rating must be between 1 and 5'), { statusCode: 400 });
+    throw Object.assign(new Error('평점은 1부터 5까지의 값이어야 합니다.'), { statusCode: 400 });
   }
 
   const updateData: any = { ...data };
@@ -168,12 +168,12 @@ export const updateReviewService = async (
 export const deleteReviewService = async (reviewId: bigint, userId: bigint) => {
   const review = await findReviewById(reviewId);
   if (!review) {
-    throw Object.assign(new Error('Review not found'), { statusCode: 404 });
+    throw Object.assign(new Error('후기를 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 작성자 확인
   if (review.reviewerId !== userId) {
-    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
   }
 
   return await prisma.$transaction(async (tx) => {

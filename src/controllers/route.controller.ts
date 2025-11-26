@@ -24,7 +24,7 @@ export const createRouteController = async (req: Request, res: Response, next: N
     } = req.body;
 
     if (!routeName) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'routeName is required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'routeName은 필수입니다.');
     }
 
     const route = await createRouteService(userId ?? null, {

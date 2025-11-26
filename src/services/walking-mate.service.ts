@@ -83,7 +83,7 @@ export const getWalkingMatesService = async (filters?: {
 export const getWalkingMateDetailService = async (mateId: bigint) => {
   const mate = await findWalkingMateById(mateId);
   if (!mate) {
-    throw Object.assign(new Error('Walking mate not found'), { statusCode: 404 });
+    throw Object.assign(new Error('산책 메이트 모집을 찾을 수 없습니다.'), { statusCode: 404 });
   }
   return mate;
 };
@@ -107,7 +107,7 @@ export const updateWalkingMateService = async (
   // 호스트 확인
   const isHost = await isWalkingMateHost(mateId, userId);
   if (!isHost) {
-    throw Object.assign(new Error('Not authorized to update this walking mate'), { statusCode: 403 });
+    throw Object.assign(new Error('이 산책 메이트 모집을 수정할 권한이 없습니다.'), { statusCode: 403 });
   }
 
   return updateWalkingMate(mateId, data);
@@ -118,7 +118,7 @@ export const deleteWalkingMateService = async (mateId: bigint, userId: bigint) =
   // 호스트 확인
   const isHost = await isWalkingMateHost(mateId, userId);
   if (!isHost) {
-    throw Object.assign(new Error('Not authorized to delete this walking mate'), { statusCode: 403 });
+    throw Object.assign(new Error('이 산책 메이트 모집을 삭제할 권한이 없습니다.'), { statusCode: 403 });
   }
 
   return deleteWalkingMate(mateId);
@@ -137,12 +137,12 @@ export const joinWalkingMateService = async (
     });
 
     if (!mate) {
-      throw Object.assign(new Error('Walking mate not found'), { statusCode: 404 });
+      throw Object.assign(new Error('산책 메이트 모집을 찾을 수 없습니다.'), { statusCode: 404 });
     }
 
     // 호스트 본인 참가 방지
     if (mate.hostUserId === userId) {
-      throw Object.assign(new Error('Host cannot join their own walking mate'), { statusCode: 400 });
+      throw Object.assign(new Error('호스트는 자신이 만든 산책 메이트 모집에 참가할 수 없습니다.'), { statusCode: 400 });
     }
 
     // 이미 참가했는지 확인
@@ -156,7 +156,7 @@ export const joinWalkingMateService = async (
     });
 
     if (existingParticipant) {
-      throw Object.assign(new Error('Already joined this walking mate'), { statusCode: 409 });
+      throw Object.assign(new Error('이미 이 산책 메이트 모집에 참가했습니다.'), { statusCode: 409 });
     }
 
     // 대기열에 이미 있는지 확인
@@ -170,14 +170,14 @@ export const joinWalkingMateService = async (
     });
 
     if (existingWaitlist) {
-      throw Object.assign(new Error('Already in waitlist'), { statusCode: 409 });
+      throw Object.assign(new Error('이미 대기열에 등록되어 있습니다.'), { statusCode: 409 });
     }
 
     // 반려동물 소유 확인
     for (const petId of petIds) {
       const isOwner = await isPetOwner(petId, userId);
       if (!isOwner) {
-        throw Object.assign(new Error(`Not authorized for pet ${petId}`), { statusCode: 403 });
+        throw Object.assign(new Error(`반려동물 ${petId}에 대한 권한이 없습니다.`), { statusCode: 403 });
       }
     }
 
@@ -240,7 +240,7 @@ export const leaveWalkingMateService = async (mateId: bigint, userId: bigint) =>
     });
 
     if (!participant) {
-      throw Object.assign(new Error('Not a participant'), { statusCode: 404 });
+      throw Object.assign(new Error('참가자가 아닙니다.'), { statusCode: 404 });
     }
 
     // 참가자 삭제
@@ -279,12 +279,12 @@ export const approveParticipantService = async (
     });
 
     if (!participant) {
-      throw Object.assign(new Error('Participant not found'), { statusCode: 404 });
+      throw Object.assign(new Error('참가자를 찾을 수 없습니다.'), { statusCode: 404 });
     }
 
     // 호스트 확인
     if (participant.mate.hostUserId !== hostUserId) {
-      throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+      throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
     }
 
     // 상태 업데이트
@@ -333,12 +333,12 @@ export const rejectParticipantService = async (
     });
 
     if (!participant) {
-      throw Object.assign(new Error('Participant not found'), { statusCode: 404 });
+      throw Object.assign(new Error('참가자를 찾을 수 없습니다.'), { statusCode: 404 });
     }
 
     // 호스트 확인
     if (participant.mate.hostUserId !== hostUserId) {
-      throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+      throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
     }
 
     // 상태 업데이트
@@ -403,7 +403,7 @@ export const cancelWaitlistService = async (waitlistId: bigint, userId: bigint) 
   });
 
   if (!waitlist) {
-    throw Object.assign(new Error('Waitlist entry not found'), { statusCode: 404 });
+    throw Object.assign(new Error('대기열 항목을 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   if (waitlist.userId !== userId) {

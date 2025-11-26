@@ -17,7 +17,7 @@ export const startSessionService = async (mateId: bigint, hostUserId: bigint) =>
   // 호스트 확인
   const isHost = await isWalkingMateHost(mateId, hostUserId);
   if (!isHost) {
-    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
   }
 
   return await prisma.$transaction(async (tx) => {
@@ -67,12 +67,12 @@ export const endSessionService = async (
 ) => {
   const session = await findSessionById(sessionId);
   if (!session) {
-    throw Object.assign(new Error('Session not found'), { statusCode: 404 });
+    throw Object.assign(new Error('세션을 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 호스트 확인
   if (session.mate.hostUserId !== hostUserId) {
-    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
   }
 
   return updateSession(sessionId, {
@@ -85,7 +85,7 @@ export const endSessionService = async (
 export const getSessionDetailService = async (sessionId: bigint) => {
   const session = await findSessionById(sessionId);
   if (!session) {
-    throw Object.assign(new Error('Session not found'), { statusCode: 404 });
+    throw Object.assign(new Error('세션을 찾을 수 없습니다.'), { statusCode: 404 });
   }
   return session;
 };

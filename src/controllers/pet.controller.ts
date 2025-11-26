@@ -39,7 +39,7 @@ export const registerPetController = async (req: Request, res: Response, next: N
     } = req.body;
 
     if (!petName || !species) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'petName and species are required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'petName과 species는 필수입니다.');
     }
 
     const pet = await registerPetService(userId, {
@@ -203,7 +203,7 @@ export const sendPetFriendRequestController = async (req: Request, res: Response
     const { targetPetId } = req.body;
 
     if (!targetPetId) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'targetPetId is required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'targetPetId는 필수입니다.');
     }
 
     const friendship = await sendPetFriendRequestService(myPetId, BigInt(targetPetId), userId);
@@ -229,7 +229,7 @@ export const respondToPetFriendRequestController = async (req: Request, res: Res
     const { accept } = req.body;
 
     if (typeof accept !== 'boolean') {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'accept (boolean) is required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'accept (boolean)는 필수입니다.');
     }
 
     const friendship = await respondToPetFriendRequestService(friendshipId, userId, accept);

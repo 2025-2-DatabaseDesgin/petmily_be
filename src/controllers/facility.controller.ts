@@ -30,7 +30,7 @@ export const createFacilityController = async (req: Request, res: Response, next
     if (!name || !type || !address || !latitude || !longitude) {
       return res.status(StatusCodes.BAD_REQUEST).sendError(
         StatusCodes.BAD_REQUEST,
-        'name, type, address, latitude, longitude are required'
+        'name, type, address, latitude, longitude는 필수입니다.'
       );
     }
 
@@ -177,7 +177,7 @@ export const linkFacilityToRouteController = async (req: Request, res: Response,
     const { facilityId, visitOrder, distanceFromStartM, isMandatory, notes } = req.body;
 
     if (!facilityId) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'facilityId is required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'facilityId는 필수입니다.');
     }
 
     await linkFacilityToRouteService({

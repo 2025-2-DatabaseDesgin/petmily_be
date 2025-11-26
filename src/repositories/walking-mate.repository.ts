@@ -141,7 +141,6 @@ export const findWalkingMateById = async (id: bigint) => {
         },
       },
       participants: {
-        where: { status: 'ACCEPTED' },
         include: {
           user: {
             select: {
@@ -164,6 +163,9 @@ export const findWalkingMateById = async (id: bigint) => {
               },
             },
           },
+        },
+        orderBy: {
+          joinedAt: 'asc',
         },
       },
       waitlist: {

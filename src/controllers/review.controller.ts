@@ -23,7 +23,7 @@ export const createReviewController = async (req: Request, res: Response, next: 
     if (!sessionId || !overallRating) {
       return res.status(StatusCodes.BAD_REQUEST).sendError(
         StatusCodes.BAD_REQUEST,
-        'sessionId and overallRating are required'
+        'sessionId와 overallRating은 필수입니다.'
       );
     }
 

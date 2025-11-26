@@ -1,4 +1,4 @@
-import { PetCondition, HydrationLevel } from '@prisma/client';
+import { PrismaClient, PetCondition, HydrationLevel } from '@prisma/client';
 import {
   createHealthLog,
   findHealthLogById,
@@ -9,6 +9,8 @@ import {
 } from '../repositories/health-log.repository';
 import { isPetOwner } from '../repositories/pet.repository';
 import { findParticipantById } from '../repositories/participant.repository';
+
+const prisma = new PrismaClient();
 
 // 건강 로그 생성
 export const createHealthLogService = async (
@@ -39,13 +41,13 @@ export const createHealthLogService = async (
   });
 
   if (!participantPet) {
-    throw Object.assign(new Error('Participant pet not found'), { statusCode: 404 });
+    throw Object.assign(new Error('참가 반려동물을 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 반려동물 소유자 확인
   const isOwner = await isPetOwner(participantPet.petId, userId);
   if (!isOwner) {
-    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
   }
 
   return createHealthLog({
@@ -58,7 +60,7 @@ export const createHealthLogService = async (
 export const getHealthLogDetailService = async (logId: bigint) => {
   const log = await findHealthLogById(logId);
   if (!log) {
-    throw Object.assign(new Error('Health log not found'), { statusCode: 404 });
+    throw Object.assign(new Error('건강 로그를 찾을 수 없습니다.'), { statusCode: 404 });
   }
   return log;
 };
@@ -89,13 +91,13 @@ export const updateHealthLogService = async (
 ) => {
   const log = await findHealthLogById(logId);
   if (!log) {
-    throw Object.assign(new Error('Health log not found'), { statusCode: 404 });
+    throw Object.assign(new Error('건강 로그를 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 반려동물 소유자 확인
   const isOwner = await isPetOwner(log.participantPet.petId, userId);
   if (!isOwner) {
-    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
   }
 
   return updateHealthLog(logId, data);
@@ -105,17 +107,15 @@ export const updateHealthLogService = async (
 export const deleteHealthLogService = async (logId: bigint, userId: bigint) => {
   const log = await findHealthLogById(logId);
   if (!log) {
-    throw Object.assign(new Error('Health log not found'), { statusCode: 404 });
+    throw Object.assign(new Error('건강 로그를 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 반려동물 소유자 확인
   const isOwner = await isPetOwner(log.participantPet.petId, userId);
   if (!isOwner) {
-    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+    throw Object.assign(new Error('권한이 없습니다.'), { statusCode: 403 });
   }
 
   return deleteHealthLog(logId);
 };
-
-const prisma = new (require('@prisma/client').PrismaClient)();
 

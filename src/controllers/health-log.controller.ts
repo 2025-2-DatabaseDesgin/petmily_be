@@ -18,7 +18,7 @@ export const createHealthLogController = async (req: Request, res: Response, nex
 
     const { participantPetId, ...data } = req.body;
     if (!participantPetId) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'participantPetId is required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'participantPetId는 필수입니다.');
     }
 
     // 숫자 변환

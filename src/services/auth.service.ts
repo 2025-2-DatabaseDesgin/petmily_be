@@ -48,13 +48,13 @@ export const loginService = async (
   }
 
   if (!user) {
-    throw Object.assign(new Error('User not found'), { statusCode: 404 });
+    throw Object.assign(new Error('사용자를 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   if (passwordInput) { // 비밀번호 제공 시 (일반 로그인)
     const isPasswordValid = await bcrypt.compare(passwordInput, user.password);
     if (!isPasswordValid) {
-      throw Object.assign(new Error('Invalid credentials'), { statusCode: 401 });
+      throw Object.assign(new Error('잘못된 인증 정보입니다.'), { statusCode: 401 });
     }
   }
   // 소셜 로그인 등 비밀번호 없이 진행되는 경우, 이 부분은 스킵될 수 있음
@@ -102,12 +102,12 @@ export const registerService = async (data: {
   // 중복 체크
   const existingUserByUsername = await findUserByUsername(data.username);
   if (existingUserByUsername) {
-    throw Object.assign(new Error('Username already exists'), { statusCode: 409 });
+    throw Object.assign(new Error('이미 존재하는 사용자명입니다.'), { statusCode: 409 });
   }
 
   const existingUserByEmail = await findUserByEmail(data.email);
   if (existingUserByEmail) {
-    throw Object.assign(new Error('Email already exists'), { statusCode: 409 });
+    throw Object.assign(new Error('이미 존재하는 이메일입니다.'), { statusCode: 409 });
   }
 
   // 비밀번호 해싱
@@ -181,13 +181,13 @@ export const refreshTokenService = async (
 ): Promise<AuthTokens> => {
   const decodedPayload = verifyToken(oldRefreshToken);
   if (!decodedPayload) {
-    throw Object.assign(new Error('Invalid or expired refresh token'), { statusCode: 401 });
+    throw Object.assign(new Error('유효하지 않거나 만료된 리프레시 토큰입니다.'), { statusCode: 401 });
   }
 
   const existingToken = await findRefreshTokenByToken(oldRefreshToken);
   if (!existingToken || existingToken.userId !== BigInt(decodedPayload.id) || existingToken.expiresAt < new Date()) {
     if(existingToken) await deleteRefreshToken(oldRefreshToken);
-    throw Object.assign(new Error('Refresh token not found, mismatched, or expired in DB'), { statusCode: 401 });
+    throw Object.assign(new Error('리프레시 토큰을 찾을 수 없거나 일치하지 않거나 만료되었습니다.'), { statusCode: 401 });
   }
 
   const newAccessToken = generateAccessToken({ 

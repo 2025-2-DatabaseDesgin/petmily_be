@@ -65,7 +65,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
  */
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-        res.status(StatusCodes.UNAUTHORIZED).json(serializeBigInt({ message: 'Authentication required. No user data found on request.' }));
+        res.status(StatusCodes.UNAUTHORIZED).json(serializeBigInt({ message: '인증이 필요합니다. 요청에 사용자 데이터가 없습니다.' }));
         return;
     }
     next();
@@ -77,12 +77,12 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction): vo
 export const authorizeRole = (requiredRole: string) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-        res.status(StatusCodes.UNAUTHORIZED).json(serializeBigInt({ message: 'Authentication required.' }));
+        res.status(StatusCodes.UNAUTHORIZED).json(serializeBigInt({ message: '인증이 필요합니다.' }));
         return;
     }
     
     if (req.user.role !== requiredRole) {
-      res.status(StatusCodes.FORBIDDEN).json(serializeBigInt({ message: `Forbidden: Role "${requiredRole}" required.` }));
+      res.status(StatusCodes.FORBIDDEN).json(serializeBigInt({ message: `접근 금지: "${requiredRole}" 역할이 필요합니다.` }));
       return;
     }
     next();

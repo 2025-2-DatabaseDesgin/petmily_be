@@ -53,7 +53,7 @@ export const getFacilitiesService = async (filters?: {
 export const getFacilityDetailService = async (facilityId: bigint) => {
   const facility = await findFacilityById(facilityId);
   if (!facility) {
-    throw Object.assign(new Error('Facility not found'), { statusCode: 404 });
+    throw Object.assign(new Error('시설을 찾을 수 없습니다.'), { statusCode: 404 });
   }
   return facility;
 };
@@ -95,7 +95,7 @@ export const linkFacilityToRouteService = async (data: {
   // 시설 존재 확인
   const facility = await findFacilityById(data.facilityId);
   if (!facility) {
-    throw Object.assign(new Error('Facility not found'), { statusCode: 404 });
+    throw Object.assign(new Error('시설을 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   return linkFacilityToRoute(data);

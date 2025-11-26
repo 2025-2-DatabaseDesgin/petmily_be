@@ -12,7 +12,7 @@ export const loginController = async (req: Request, res: Response, next: NextFun
   try {
     const { loginIdentifier, password } = req.body; // username 또는 email
     if (!loginIdentifier || !password) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'loginIdentifier and password are required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'loginIdentifier와 password는 필수입니다.');
     }
     
     const result = await loginService(loginIdentifier, password);
@@ -32,7 +32,7 @@ export const registerController = async (req: Request, res: Response, next: Next
     const { username, password, email, name, birthDate, phone, region, latitude, longitude, isPetOwner } = req.body;
     
     if (!username || !password || !email || !name) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'username, password, email, and name are required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'username, password, email, name은 필수입니다.');
     }
 
     const result = await registerService({
@@ -62,10 +62,10 @@ export const refreshTokenController = async (req: Request, res: Response, next: 
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
-      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, 'Refresh token is required');
+      return res.status(StatusCodes.BAD_REQUEST).sendError(StatusCodes.BAD_REQUEST, '리프레시 토큰은 필수입니다.');
     }
     const newTokens = await refreshTokenService(refreshToken);
-    res.sendSuccess(StatusCodes.OK, 'Token refreshed successfully', {
+    res.sendSuccess(StatusCodes.OK, '토큰 갱신 성공', {
         accessToken: newTokens.accessToken,
         refreshToken: newTokens.refreshToken,
     });
@@ -78,7 +78,7 @@ export const logoutController = async (req: Request, res: Response, next: NextFu
   try {
     const { refreshToken } = req.body; 
     await logoutService(refreshToken);
-    res.sendSuccess(StatusCodes.OK, 'Logout successful');
+    res.sendSuccess(StatusCodes.OK, '로그아웃 성공');
   } catch (error) {
     next(error);
   }

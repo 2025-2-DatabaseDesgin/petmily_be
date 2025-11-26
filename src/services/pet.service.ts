@@ -49,7 +49,7 @@ export const getMyPetsService = async (userId: bigint) => {
 export const getPetDetailService = async (petId: bigint) => {
   const pet = await findPetById(petId);
   if (!pet) {
-    throw Object.assign(new Error('Pet not found'), { statusCode: 404 });
+    throw Object.assign(new Error('반려동물을 찾을 수 없습니다.'), { statusCode: 404 });
   }
   return pet;
 };
@@ -79,7 +79,7 @@ export const updatePetService = async (
   // 소유자 확인
   const isOwner = await isPetOwner(petId, userId);
   if (!isOwner) {
-    throw Object.assign(new Error('Not authorized to update this pet'), { statusCode: 403 });
+    throw Object.assign(new Error('이 반려동물을 수정할 권한이 없습니다.'), { statusCode: 403 });
   }
 
   return updatePet(petId, data);
@@ -90,7 +90,7 @@ export const deletePetService = async (petId: bigint, userId: bigint) => {
   // 소유자 확인
   const isOwner = await isPetOwner(petId, userId);
   if (!isOwner) {
-    throw Object.assign(new Error('Not authorized to delete this pet'), { statusCode: 403 });
+    throw Object.assign(new Error('이 반려동물을 삭제할 권한이 없습니다.'), { statusCode: 403 });
   }
 
   return deletePet(petId);
@@ -105,18 +105,18 @@ export const sendPetFriendRequestService = async (
   // 내 반려동물인지 확인
   const isOwner = await isPetOwner(myPetId, userId);
   if (!isOwner) {
-    throw Object.assign(new Error('Not authorized to send friend request'), { statusCode: 403 });
+    throw Object.assign(new Error('친구 요청을 보낼 권한이 없습니다.'), { statusCode: 403 });
   }
 
   // 자기 자신에게 요청 방지
   if (myPetId === targetPetId) {
-    throw Object.assign(new Error('Cannot send friend request to yourself'), { statusCode: 400 });
+    throw Object.assign(new Error('자기 자신에게 친구 요청을 보낼 수 없습니다.'), { statusCode: 400 });
   }
 
   // 대상 반려동물 존재 확인
   const targetPet = await findPetById(targetPetId);
   if (!targetPet) {
-    throw Object.assign(new Error('Target pet not found'), { statusCode: 404 });
+    throw Object.assign(new Error('대상 반려동물을 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   return createPetFriendship(myPetId, targetPetId);
@@ -130,7 +130,7 @@ export const respondToPetFriendRequestService = async (
 ) => {
   const friendship = await findPetFriendshipById(friendshipId);
   if (!friendship) {
-    throw Object.assign(new Error('Friend request not found'), { statusCode: 404 });
+    throw Object.assign(new Error('친구 요청을 찾을 수 없습니다.'), { statusCode: 404 });
   }
 
   // 요청 받은 반려동물의 소유자인지 확인
@@ -138,7 +138,7 @@ export const respondToPetFriendRequestService = async (
   const isPet2Owner = friendship.pet2.userId === userId;
 
   if (!isPet1Owner && !isPet2Owner) {
-    throw Object.assign(new Error('Not authorized to respond to this request'), { statusCode: 403 });
+    throw Object.assign(new Error('이 요청에 응답할 권한이 없습니다.'), { statusCode: 403 });
   }
 
   const status = accept ? 'ACCEPTED' : 'REJECTED';
